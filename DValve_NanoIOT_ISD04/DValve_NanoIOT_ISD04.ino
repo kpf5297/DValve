@@ -97,29 +97,47 @@ void setup() {
 
 void loop() {
 
-  Serial.print("Enter a number of steps: ");
+  // if(stepper.distanceToGo() == 0) {
+  //   Serial.print("Enter a number of steps: ");
+  // }
 
+  // Serial.print("Enter a number of steps: ");
+  
   while(!Serial.available()) {
     ;
   }
   
-    int GOTO = Serial.parseInt();
-    Serial.print("You entered: ");
-    Serial.println(GOTO);
+  int GOTO = Serial.parseInt();
 
-    lcd.print("You entered: ");
-    lcd.print(GOTO);
+  if (GOTO != 0) {
 
-    if (GOTO != 0) {
+    
+    Serial.print("\nYou entered: ");
+    Serial.print(GOTO);
+
+    if (GOTO > 0) {
+      Serial.print("\nNow opening valve");
+    }
+    
+    if (GOTO < 0) {
+      Serial.print("\nNow closing valve");
+    }
+  //  lcd.print("You entered: ");
+  //  lcd.print(GOTO);
+
     stepper.move(GOTO);
     while (stepper.distanceToGo() != 0) {
       stepper.run();
     }
-    }
 
-    if (stepper.distanceToGo() == 0) {
-      lcd.clear();
+    if(stepper.distanceToGo() == 0) {
+    Serial.print("\nEnter a number of steps: ");
     }
+  }
+
+  // if (stepper.distanceToGo() == 0) {
+  //   lcd.clear();
+  // }
 
   if (top_limit_triggered) {
     // Serial.println("Top Limit triggered.");
@@ -141,5 +159,5 @@ void loop() {
     bottom_limit_triggered = false;
   }
   
-  stepper.run();
+  // stepper.run();
 }
