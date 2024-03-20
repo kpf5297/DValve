@@ -79,3 +79,32 @@ std::chrono::microseconds StepperMotor::calculateStepDelay(int stepsRemaining) {
     // Implementation of dynamic step delay calculation would go here
     return std::chrono::microseconds(stepDelay); // Placeholder implementation
 }
+
+// Example function to setup event detection for both NO and NC contacts
+void StepperMotor::setupLimitSwitchEvents(gpiod_chip *chip, int pinNO1, int pinNC1, int pinNO2, int pinNC2, gpiod_line **lineNO1, gpiod_line **lineNC1, gpiod_line **lineNO2, gpiod_line **lineNC2, const std::string& consumerNO1, const std::string& consumerNC1, const std::string& consumerNO2, const std::string& consumerNC2) {
+    *lineNO1 = gpiod_chip_get_line(chip, pinNO1);
+    gpiod_line_request_both_edges_events(*lineNO1, consumerNO1.c_str()); // NO contact 1, triggers on both edges
+    
+    *lineNC1 = gpiod_chip_get_line(chip, pinNC1);
+    gpiod_line_request_both_edges_events(*lineNC1, consumerNC1.c_str()); // NC contact 1, triggers on both edges
+    
+    *lineNO2 = gpiod_chip_get_line(chip, pinNO2);
+    gpiod_line_request_both_edges_events(*lineNO2, consumerNO2.c_str()); // NO contact 2, triggers on both edges
+    
+    *lineNC2 = gpiod_chip_get_line(chip, pinNC2);
+    gpiod_line_request_both_edges_events(*lineNC2, consumerNC2.c_str()); // NC contact 2, triggers on both edges
+}
+
+// ISR for handling limit switch events
+void StepperMotor::handleLimitSwitchEvent(gpiod_line *line, const char* eventDescription) {
+    gpiod_line_event event;
+    if (gpiod_line_event_read(line, &event) == 0) {
+        if (event.event_type == GPIOD_LINE_EVENT_RISING_EDGE) {
+            std::cout << "Rising edge detected on " << eventDescription << std::endl;
+            // Action for rising edge (switch release)
+        } else if (event.event_type == GPIOD_LINE_EVENT_FALLING_EDGE) {
+            std::cout << "Falling edge detected on " << eventDescription << std::endl;
+            // Action for falling edge (switch press)
+        }
+    }
+}

@@ -17,6 +17,7 @@ public:
     void move(int steps);
     void stop();
 
+
 private:
     gpiod_chip* chip;
     gpiod_line* enableLine;
@@ -30,8 +31,30 @@ private:
     void initializeGPIO(int pin, gpiod_line** line);
     void setDirection(bool direction);
     void enableMotor(bool enable);
-    void step();
+    void step();    
     std::chrono::microseconds calculateStepDelay(int steps);
+
+    // function to setup event detection for both NO and NC contacts
+void StepperMotor::setupLimitSwitchEvents(gpiod_chip *chip, int pinNO1, int pinNC1, int pinNO2,
+ int pinNC2, gpiod_line **lineNO1, gpiod_line **lineNC1, gpiod_line **lineNO2, gpiod_line **lineNC2,
+  const std::string& consumerNO1, const std::string& consumerNC1, const std::string& consumerNO2, 
+  const std::string& consumerNC2) {
+
+
+    // ISR for handling limit switch events
+    void handleLimitSwitchEvent(gpiod_line *line, const char* eventDescription);
+
+    // In main loop or dedicated thread for handling GPIO events
+    // Example for a single limit switch with both NO and NC contacts
+    // void StepperMotor::gpiod_line_event event;
+    // if (gpiod_line_event_wait(lineNO, NULL) > 0) {
+    //     handleLimitSwitchEvent(lineNO, "NO Contact");
+    // }
+    // if (gpiod_line_event_wait(lineNC, NULL) > 0) {
+    //     handleLimitSwitchEvent(lineNC, "NC Contact");
+    // }
+
+
 };
 
 #endif // STEPPER_MOTOR_H
