@@ -37,10 +37,7 @@ PiStepper::PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolut
     disable();
 }
 
-/**
- * @brief Destroy the PiStepper object
- * 
- */
+
 PiStepper::~PiStepper() {
     // Close the GPIO pins
     gpiod_line_release(step_signal);
@@ -49,41 +46,30 @@ PiStepper::~PiStepper() {
     gpiod_chip_close(chip);
 }
 
-/**
- * @brief Set the speed of the stepper motor in RPM
- * 
- * @param speed The speed of the stepper motor in RPM
- */
+
 void PiStepper::setSpeed(float speed) {
     _speed = speed;
 }
 
-/**
- * @brief Set the acceleration of the stepper motor in RPM/s
- * 
- * @param acceleration The acceleration of the stepper motor in RPM/s
- */
+
 void PiStepper::setAcceleration(float acceleration) {
     _acceleration = acceleration;
 }
 
-/**
- * @brief Enable the stepper motor
- * 
- */
+
 void PiStepper::enable() {
     gpiod_line_set_value(enable_signal, 1);
 }
 
-/**
- * @brief Disable the stepper motor
- * 
- */
+
 void PiStepper::disable() {
     gpiod_line_set_value(enable_signal, 0);
 }
 
 void PiStepper::moveSteps(int steps, int direction) {
+    _remainingSteps = steps;
+    _currentDirection = direction;
+    
     // Set the direction
     gpiod_line_set_value(dir_signal, direction);
 
@@ -114,6 +100,9 @@ void PiStepper::moveSteps(int steps, int direction) {
         gpiod_line_set_value(step_signal, 0);
         usleep(delayTime);
         gpiod_line_set_value(step_signal, 1);
+
+        // Decrement the remaining steps
+        _remainingSteps--;
     }
 
     // Constant speed
@@ -122,6 +111,9 @@ void PiStepper::moveSteps(int steps, int direction) {
         gpiod_line_set_value(step_signal, 0);
         usleep(1000000 / (maxSpeed * _stepsPerRevolution * _microstepping));
         gpiod_line_set_value(step_signal, 1);
+
+        // Decrement the remaining steps
+        _remainingSteps--;
     }
 
     // Deceleration
@@ -136,10 +128,18 @@ void PiStepper::moveSteps(int steps, int direction) {
         gpiod_line_set_value(step_signal, 0);
         usleep(delayTime);
         gpiod_line_set_value(step_signal, 1);
+
+        // Decrement the remaining steps
+        _remainingSteps--;
     }
 }
 
 void PiStepper::accelMoveSteps(int steps, int direction) {
+
+    _remainingSteps = steps;
+    _currentDirection = direction;
+    
+
     // Set the direction
     gpiod_line_set_value(dir_signal, direction);
 
@@ -167,6 +167,10 @@ void PiStepper::accelMoveSteps(int steps, int direction) {
         usleep(delay * 1000000);
         gpiod_line_set_value(step_signal, 0);
         usleep(delay * 1000000);
+
+        // Decrement the remaining steps
+        _remainingSteps--;
+
     }
 
     // Run at constant speed
@@ -175,6 +179,9 @@ void PiStepper::accelMoveSteps(int steps, int direction) {
         usleep(delay * 1000000);
         gpiod_line_set_value(step_signal, 0);
         usleep(delay * 1000000);
+
+        // Decrement the remaining steps
+        _remainingSteps--;
     }
 
     // Decelerate
@@ -183,6 +190,9 @@ void PiStepper::accelMoveSteps(int steps, int direction) {
         usleep(delay * 1000000);
         gpiod_line_set_value(step_signal, 0);
         usleep(delay * 1000000);
+
+        // Decrement the remaining steps
+        _remainingSteps--;
     }
 
     // Disable the stepper motor
@@ -190,17 +200,111 @@ void PiStepper::accelMoveSteps(int steps, int direction) {
 }
 
 void PiStepper::moveAngle(float angle, int direction) {
+
+    _currentDirection = direction;
+    
+
     int steps = round(angle * _stepsPerRevolution * _microstepping / 360);
     moveSteps(steps, direction);
 }
 
 void PiStepper::setMicrostepping(int microstepping) {
+    
+
     _microstepping = microstepping;
 }
 
 void PiStepper::delay(float seconds) {
+    
+
     usleep(seconds * 1000000);
 }
 
+bool PiStepper::move(int steps) {
 
+    _remainingSteps = steps;
+
+    // Define the starting speed, maximum speed, and acceleration
+    double startSpeed = 0.1; // Adjust as needed
+    double maxSpeed = 1.0; // Adjust as needed
+    double acceleration = _acceleration; // Adjust as needed
+
+    // Calculate the number of steps for acceleration and deceleration
+    int accelSteps = (maxSpeed - startSpeed) / acceleration;
+    int decelSteps = steps - accelSteps;
+
+    // Enable the stepper motor
+    enable();
+
+    // Wait for the stepper motor to enable
+    usleep(1000000);
+
+    // Acceleration
+    for (int i = 0; i < accelSteps; i++) {
+        // Calculate the current speed
+        double speed = startSpeed + i * acceleration;
+
+        // Calculate the delay between steps
+        double delayTime = 1000000 / (speed * _stepsPerRevolution * _microstepping);
+
+        // Move one step
+        gpiod_line_set_value(step_signal, 0);
+        usleep(delayTime);
+        gpiod_line_set_value(step_signal, 1);
+
+        // Decrement the remaining steps
+        _remainingSteps--;
+    }
+
+    // Constant speed
+    for (int i = accelSteps; i < decelSteps; i++) {
+        // Move one step
+        gpiod_line_set_value(step_signal, 0);
+        usleep(1000000 / (maxSpeed * _stepsPerRevolution * _microstepping));
+        gpiod_line_set_value(step_signal, 1);
+
+        // Decrement the remaining steps
+        _remainingSteps--;
+    }
+
+    // Deceleration
+    for (int i = decelSteps; i < steps; i++) {
+        // Calculate the current speed
+        double speed = maxSpeed - (i - decelSteps) * acceleration;
+
+        // Calculate the delay between steps
+        double delayTime = 1000000 / (speed * _stepsPerRevolution * _microstepping);
+
+        // Move one step
+        gpiod_line_set_value(step_signal, 0);
+        usleep(delayTime);
+        gpiod_line_set_value(step_signal, 1);
+
+        // Decrement the remaining steps
+        _remainingSteps--;
+    }
+
+    return true;
+}
+
+int PiStepper::getSteps() {
+    return _remainingSteps;
+}
+
+int PiStepper::getDirection() {
+    return _currentDirection;
+}
+
+void PiStepper::setDirection(int direction) {
+    _currentDirection = direction;
+}
+
+void PiStepper::runMotor() {
+    // Move the stepper motor
+    moveSteps(getSteps(), getDirection());
+}
+
+void PiStepper::setSteps(int steps) {
+    _remainingSteps = steps;
+}
 

@@ -31,6 +31,7 @@
 
 #include <gpiod.h>
 #include <iostream>
+#include <mutex>
 
 class PiStepper {
 public:
@@ -120,83 +121,34 @@ public:
      */
     void delay(float seconds);
 
+    int getSteps();
+
+    int getDirection();
+
+    void setSteps(int steps);
+
+    void setDirection(int direction);
+
+    void runMotor();
+
+
+    bool move(int steps);
+
 private:
-    // Private member variables
 
-    // GPIO
-
-    /**
-     * @brief The GPIO pin number for the step pin
-     * 
-     */
+    int _currentDirection;
+    int _remainingSteps;
     int _stepPin;
-
-    /**
-     * @brief The GPIO pin number for the direction pin
-     * 
-     */
     int _dirPin;
-
-    /**
-     * @brief The GPIO pin number for the enable pin
-     * 
-     */
     int _enablePin;
-
-    /**
-     * @brief The number of steps per revolution for the stepper motor
-     * 
-     */
     int _stepsPerRevolution;
-
-    /**
-     * @brief The microstepping value for the stepper motor
-     * 
-     */
     int _microstepping;
-
-    /**
-     * @brief The speed of the stepper motor in RPM
-     * 
-     */
     float _speed;
-
-    /**
-     * @brief The acceleration of the stepper motor in RPM/s
-     * 
-     */
     float _acceleration;
-
-    /**
-     * @brief The GPIO chip
-    */
     gpiod_chip *chip;
-
-    /**
-     * @brief The GPIO line for the step pin
-     * 
-     */
     gpiod_line *step_signal;
-
-    /**
-     * @brief The GPIO line for the direction pin
-     * 
-     */
     gpiod_line *dir_signal;
-
-    /**
-     * @brief The GPIO line for the enable pin
-     * 
-     */
     gpiod_line *enable_signal;
-
-    // Private member functions
-    /**
-     * @brief Convert steps to angle
-     * 
-     * @param steps The number of steps to convert to angle
-     * @return float The angle in degrees
-     */
     float stepsToAngle(int steps);
 };
 
