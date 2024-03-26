@@ -19,6 +19,11 @@
 
     This library uses the GPIOD library to control the GPIO pins.
 
+    I need to add limit swtiches to the design two of them, one to the top lmit of movement and one 
+    to the bottom,  This will consist of two inputs/GPIO pins for each switch, both n?O and N/C.  
+    The activation of either of the normally closed will trigger one of two corresponding ISR's 
+    that also need to be created.
+
 */
 // PiStepper.h
 #ifndef PiStepper_h
