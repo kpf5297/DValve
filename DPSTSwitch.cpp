@@ -3,14 +3,13 @@
 
 // Constructor
 DPSTSwitch::DPSTSwitch(const char* chipName, unsigned int noPin, unsigned int ncPin) : state(false) {
+    // std::lock_guard<std::mutex> lock(gpioMutex); // Lock the mutex for the scope of this block
     initGPIO(chipName, noPin, ncPin);
-
-    // Generate name based on the GPIO pins
-    name = "Switch_" + std::to_string(noPin) + "_" + std::to_string(ncPin);
 }
 
 // Destructor
 DPSTSwitch::~DPSTSwitch() {
+    // std::lock_guard<std::mutex> lock(gpioMutex); // Lock the mutex for the scope of this block
     if (noLine) {
         gpiod_line_release(noLine);
     }
@@ -24,6 +23,7 @@ DPSTSwitch::~DPSTSwitch() {
 
 // Initialize GPIO pins
 void DPSTSwitch::initGPIO(const char* chipName, unsigned int noPin, unsigned int ncPin) {
+    // std::lock_guard<std::mutex> lock(gpioMutex); // Lock the mutex for the scope of this block
     chip = gpiod_chip_open_by_name(chipName);
     if (!chip) {
         std::cerr << "Failed to open GPIO chip" << std::endl;
@@ -49,21 +49,24 @@ void DPSTSwitch::initGPIO(const char* chipName, unsigned int noPin, unsigned int
 
 // Toggle the state of the switch
 void DPSTSwitch::toggleSwitch() {
+    std::lock_guard<std::mutex> lock(gpioMutex); // Lock the mutex for the scope of this block
     state = !state;
 }
 
 // Read the state of the Normally Open (N/O) pin
 bool DPSTSwitch::readNOPin() const {
+    std::lock_guard<std::mutex> lock(gpioMutex); // Lock the mutex for the scope of this block
     return gpiod_line_get_value(noLine);
 }
 
 // Read the state of the Normally Closed (N/C) pin
 bool DPSTSwitch::readNCPin() const {
+    std::lock_guard<std::mutex> lock(gpioMutex); // Lock the mutex for the scope of this block
     return gpiod_line_get_value(ncLine);
 }
 
 // Get the name of the switch
 std::string DPSTSwitch::getName() const {
-
-    return name;
+    std::lock_guard<std::mutex> lock(gpioMutex); // Lock the mutex for the scope of this block
+    return gpiod_line_consumer(noLine);
 }

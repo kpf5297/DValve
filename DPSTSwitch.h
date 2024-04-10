@@ -3,6 +3,7 @@
 
 #include <gpiod.h>
 #include <string>
+#include <mutex>
 
 
 class DPSTSwitch {
@@ -23,6 +24,7 @@ private:
     struct gpiod_line* ncLine;     // GPIO line for the N/C pin
     bool state;                    // Represents the state of the switch
     std::string name;                   // Name of the switch
+    mutable std::mutex gpioMutex;
 
     void initGPIO(const char* chipName, unsigned int noPin, unsigned int ncPin);
 };
