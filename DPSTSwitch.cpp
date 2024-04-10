@@ -4,6 +4,9 @@
 // Constructor
 DPSTSwitch::DPSTSwitch(const char* chipName, unsigned int noPin, unsigned int ncPin) : state(false) {
     initGPIO(chipName, noPin, ncPin);
+
+    // Generate name based on the GPIO pins
+    name = "Switch_" + std::to_string(noPin) + "_" + std::to_string(ncPin);
 }
 
 // Destructor
@@ -61,5 +64,6 @@ bool DPSTSwitch::readNCPin() const {
 
 // Get the name of the switch
 std::string DPSTSwitch::getName() const {
-    return gpiod_line_consumer(noLine);
+
+    return name;
 }

@@ -19,7 +19,7 @@ int STEP_PIN = 27;
 int DIR_PIN = 17;
 int ENABLE_PIN = 22;
 int STEPS_PER_REVOLUTION = 200;
-int MICROSTEPPING = 1;
+int MICROSTEPPING = 8;
 
 // Function to run the motor in a separate thread
 void* runMotor(void* arg) {
@@ -27,6 +27,11 @@ void* runMotor(void* arg) {
 
     // Move the stepper motor
     stepper->moveSteps(stepper->getSteps(), stepper->getDirection());
+
+    // Display the current step and direction every 10 steps
+
+    std::cout << "Step: " << stepper->getSteps() << ", Direction: " << stepper->getDirection() << std::endl;
+
 
     return nullptr;
 }

@@ -20,7 +20,6 @@ void motorThread(DPSTSwitch& switchObj, std::atomic<bool>& running) {
         bool ncState = switchObj.readNCPin();
 
         if (prevNoState && !noState && ncState) {
-            // Execute ISR to move the motor 200 steps
             std::cout << "Switch activated: " << switchObj.getName() << std::endl;
         }
 
@@ -33,12 +32,12 @@ void motorThread(DPSTSwitch& switchObj, std::atomic<bool>& running) {
 
 int main() {
     DPSTSwitch bottomSwitch("gpiochip0", 21, 20);
-    DPSTSwitch topSwitch("gpiochip0", 12, 16);
+    // DPSTSwitch topSwitch("gpiochip0", 12, 16);
 
     std::atomic<bool> running(true);
 
     std::thread bottomThread(motorThread, std::ref(bottomSwitch), std::ref(running));
-    std::thread topThread(motorThread, std::ref(topSwitch), std::ref(running));
+    // std::thread topThread(motorThread, std::ref(topSwitch), std::ref(running));
 
     // Wait for user input to stop the threads
     std::cin.get();
@@ -46,7 +45,7 @@ int main() {
     running = false;
 
     bottomThread.join();
-    topThread.join();
+    // topThread.join();
 
     return 0;
 }
