@@ -80,8 +80,11 @@ void PiStepper::moveSteps(int steps, int direction) {
 }
 
 void PiStepper::moveAngle(float angle, int direction) {
-    int steps = std::round(angle / 360.0 * _stepsPerRevolution * _microstepping);
+    int steps = std::round(angle * ((_stepsPerRevolution * _microstepping) / 360.0f));
     moveSteps(steps, direction);
+
+    // OUtput calculated steps
+    std::cout << "Calculated steps: " << steps << std::endl;
 }
 
 void PiStepper::homeMotor() {
