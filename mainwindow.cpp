@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "DPSTSwitch.h"
 #include "PiStepper.h"
 
 int STEP_PIN = 27;
@@ -11,7 +10,6 @@ int MICROSTEPPING = 1;
 
 int DEFAULT_DIRECTION = 0;
 int DEFAULT_STEPS = 0;
-int DEFAULT_SPEED = 80;
 
 // Create a PiStepper object
 PiStepper stepper(STEP_PIN, DIR_PIN, ENABLE_PIN, STEPS_PER_REVOLUTION, MICROSTEPPING);
@@ -53,23 +51,16 @@ void MainWindow::move_button_clicked() {
         // Handle the error, maybe show a message box or set a default value
     }
 
-    // Read the text from QLineEdit
-    QString speedText = ui->step_lineEdit->text();
-
-    // Convert the text to an integer
-    int speedValue = speedText.toInt(&ok);
-
-    if (ok) {
-        stepper.setSpeed(speedValue);
-    } else {
-        // The conversion failed (e.g., the text was not a valid integer)
-        // Handle the error, maybe show a message box or set a default value
-    }
-
     int directionValue = ui->direction_comboBox->currentData().toInt();
 
     stepper.moveSteps(stepValue,directionValue);
 
 }
 
+
+
+void MainWindow::onHome_button_clicked()
+{
+    stepper.homeMotor();
+}
 

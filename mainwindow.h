@@ -18,6 +18,8 @@ public:
 private slots:
     void move_button_clicked();
 
+    void onHome_button_clicked();
+
 private:
     Ui::MainWindow *ui;
 };
