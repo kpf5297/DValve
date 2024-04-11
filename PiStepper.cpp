@@ -8,7 +8,7 @@ PiStepper::PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolut
     _enablePin(enablePin),
     _stepsPerRevolution(stepsPerRevolution),
     _microstepping(microstepping),
-    _speed(20), // Default speed in RPM
+    _speed(20), // Default speed in RPM down from 20
     _acceleration(80), // Default acceleration in RPM/s
     _currentStepCount(0) // Initialize step counter to 0
 {
@@ -70,9 +70,9 @@ void PiStepper::moveSteps(int steps, int direction) {
 
         // Move one step
         gpiod_line_set_value(step_signal, 1);
-        usleep(1000); // This delay may need to be adjusted
+        usleep(2500); // This delay may need to be adjusted
         gpiod_line_set_value(step_signal, 0);
-        usleep(1000); // This delay may need to be adjusted
+        usleep(2500); // This delay may need to be adjusted
 
         // Update the current step count
         _currentStepCount += (direction == 0) ? -1 : 1;
@@ -90,7 +90,7 @@ void PiStepper::homeMotor() {
     while (gpiod_line_get_value(limit_switch_bottom) == 0) { // Assumes active high when triggered
         moveSteps(1, direction); // Move one step at a time towards the home position
         // adding a delay 
-        usleep(10000); // Sleep for 10 ms
+        usleep(1000); // Sleep for 10 ms
         
     }
     _currentStepCount = 0; // Reset the step counter at the home position
