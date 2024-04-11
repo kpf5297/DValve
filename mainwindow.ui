@@ -47,7 +47,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="dir_lineEdit"/>
+        <widget class="QComboBox" name="direction_comboBox"/>
        </item>
        <item>
         <spacer name="horizontalSpacer_2">
@@ -118,16 +118,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="speed_label">
-         <property name="text">
-          <string>Speed</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="speed_lineEdit"/>
        </item>
        <item>
         <spacer name="horizontalSpacer_4">
@@ -205,8 +195,8 @@
    <slot>move_button_clicked()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>222</x>
-     <y>320</y>
+     <x>285</x>
+     <y>346</y>
     </hint>
     <hint type="destinationlabel">
      <x>224</x>
@@ -217,5 +207,7 @@
  </connections>
  <slots>
   <slot>move_button_clicked()</slot>
+  <slot>onDirection_comboBox_change()</slot>
+  <slot>slot1()</slot>
  </slots>
 </ui>

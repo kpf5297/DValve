@@ -16,15 +16,17 @@ int DEFAULT_SPEED = 80;
 // Create a PiStepper object
 PiStepper stepper(STEP_PIN, DIR_PIN, ENABLE_PIN, STEPS_PER_REVOLUTION, MICROSTEPPING);
 
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-        ui->dir_lineEdit->setText(QString::number(DEFAULT_DIRECTION));
-        ui->step_lineEdit->setText(QString::number(DEFAULT_STEPS));
-        ui->speed_lineEdit->setText(QString::number(DEFAULT_SPEED));
+    ui->direction_comboBox->addItem("Open", QVariant(1)); // Assuming 1 represents open
+    ui->direction_comboBox->addItem("Closed", QVariant(0)); // Assuming 0 represents closed
+
+    ui->step_lineEdit->setText(QString::number(DEFAULT_STEPS));
 
 }
 
@@ -35,23 +37,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::move_button_clicked() {
 
-
-
-
-    // Read the text from QLineEdit
-    QString directionText = ui->dir_lineEdit->text();
-
     // Convert the text to an integer
     bool ok;
-    int dirValue = directionText.toInt(&ok);
-
-    if (ok) {
-        // The conversion was successful, use the integer value as needed
-    } else {
-        // The conversion failed (e.g., the text was not a valid integer)
-        // Handle the error, maybe show a message box or set a default value
-    }
-
 
     // Read the text from QLineEdit
     QString stepText = ui->step_lineEdit->text();
@@ -79,7 +66,10 @@ void MainWindow::move_button_clicked() {
         // Handle the error, maybe show a message box or set a default value
     }
 
-    stepper.moveSteps(stepValue,dirValue);
+    int directionValue = ui->direction_comboBox->currentData().toInt();
+
+    stepper.moveSteps(stepValue,directionValue);
 
 }
+
 
