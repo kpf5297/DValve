@@ -1,6 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "PiStepper.h"
+#include <QTimer>
+#include <QMessageBox>
+#include <QDebug>
 
 int STEP_PIN = 27;
 int DIR_PIN = 17;
@@ -10,6 +13,8 @@ int MICROSTEPPING = 1;
 
 int DEFAULT_DIRECTION = 0;
 int DEFAULT_STEPS = 0;
+int DEFAULT_OPEN_DURATION = 90;
+int FULL_COUNT_RANGE = 1700;
 
 // Create a PiStepper object
 PiStepper stepper(STEP_PIN, DIR_PIN, ENABLE_PIN, STEPS_PER_REVOLUTION, MICROSTEPPING);
@@ -25,6 +30,15 @@ MainWindow::MainWindow(QWidget *parent)
     ui->direction_comboBox->addItem("Closed", QVariant(0)); // Assuming 0 represents closed
 
     ui->step_lineEdit->setText(QString::number(DEFAULT_STEPS));
+
+    ui->open_triggered_checkBox->setChecked(false);
+
+    ui->open_duration_lineEdit->setText(QString::number(DEFAULT_OPEN_DURATION));
+
+    // Set a timer to check if external trigger is enabled
+    // QTimer *timer = new QTimer(this); // Create a new QTimer
+    // connect(timer, SIGNAL(timeout()), this, SLOT(triggered_mode_enable_checked())); // Connect the timeout signal to the triggered_mode_enable_checked slot
+    // timer->start(1000);
 
 }
 
@@ -68,12 +82,28 @@ void MainWindow::on_test_button_clicked() {
 
     QString openTime = ui->open_duration_lineEdit->text();
 
-    stepper.moveStepsOverDuration(200,openTime.toInt());
+    // Ensure value is >= 8.5 seconds
+    if (openTime.toInt() < 8.5) {
+        openTime = "8.5";
+        ui->open_duration_lineEdit->setText(openTime);
+    }
+
+    stepper.moveStepsOverDuration(FULL_COUNT_RANGE,openTime.toInt());
 }
+
+
 
 void MainWindow::triggered_mode_enable_checked() {
+    if (ui->open_triggered_checkBox->isChecked()) {
+        QMessageBox::StandardButton reply = QMessageBox::information(this, "External trigger is enabled. Monitoring external trigger", "Close this dialog box to stop monitoring external trigger.");
 
-    // ui->open_triggered_checkBox->
+
+    }
+
+    // Uncheck the checkbox
+    ui->open_triggered_checkBox->setChecked(false);
 
 }
+
+
 
