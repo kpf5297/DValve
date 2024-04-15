@@ -30,6 +30,8 @@ public:
     // Position tracking
     int getCurrentStepCount() const; // Get the current step count relative to the starting position
 
+    void moveStepsOverDuration(int steps, int durationSeconds); // Move the stepper motor a specified number of steps over a specified duration
+
 private:
     // GPIO pin assignments
     int _stepPin;

@@ -8,7 +8,7 @@ PiStepper::PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolut
     _enablePin(enablePin),
     _stepsPerRevolution(stepsPerRevolution),
     _microstepping(microstepping),
-    _speed(20), // Default speed in RPM down from 20
+    _speed(20), // Default speed in RPM
     _acceleration(80), // Default acceleration in RPM/s
     _currentStepCount(0) // Initialize step counter to 0
 {
@@ -55,29 +55,26 @@ void PiStepper::disable() {
 }
 
 void PiStepper::moveSteps(int steps, int direction) {
-    std::lock_guard<std::mutex> lock(gpioMutex); // Ensure thread-safe access to GPIO
     enable();
     gpiod_line_set_value(dir_signal, direction);
 
+    float stepDelay = 60.0 * 1000000 / (_speed * _stepsPerRevolution * _microstepping); // delay in microseconds
+
     for (int i = 0; i < steps; i++) {
-        // Check if a limit switch is activated, stop if it is
-        // if (gpiod_line_get_value(limit_switch_top) == 1 || gpiod_line_get_value(limit_switch_bottom) == 1) {
-        //     break;
-        // }
-        if (gpiod_line_get_value(limit_switch_bottom) == 1 && direction == 0) {
-            break;
-        }
-
-        // Move one step
         gpiod_line_set_value(step_signal, 1);
-        usleep(2500); // This delay may need to be adjusted
+        usleep(stepDelay / 2); // Half delay for pulse high
         gpiod_line_set_value(step_signal, 0);
-        usleep(2500); // This delay may need to be adjusted
+        usleep(stepDelay / 2); // Half delay for pulse low
 
-        // Update the current step count
-        _currentStepCount += (direction == 0) ? -1 : 1;
+        if (direction == 0) {
+            _currentStepCount--;
+        } else {
+            _currentStepCount++;
+        }
     }
+    disable();
 }
+
 
 void PiStepper::moveAngle(float angle, int direction) {
     int steps = std::round(angle * ((_stepsPerRevolution * _microstepping) / 360.0f));
@@ -93,8 +90,7 @@ void PiStepper::homeMotor() {
     while (gpiod_line_get_value(limit_switch_bottom) == 0) { // Assumes active high when triggered
         moveSteps(1, direction); // Move one step at a time towards the home position
         // adding a delay 
-        usleep(1000); // Sleep for 10 ms
-        
+        usleep(100); // Sleep for 1 ms
     }
     _currentStepCount = 0; // Reset the step counter at the home position
     disable();
@@ -112,3 +108,12 @@ int PiStepper::getCurrentStepCount() const {
 float PiStepper::stepsToAngle(int steps) {
     return (static_cast<float>(steps) / (_stepsPerRevolution * _microstepping)) * 360.0f;
 }
+
+void PiStepper::moveStepsOverDuration(int steps, int durationSeconds) {
+    float stepsPerSecond = steps / static_cast<float>(durationSeconds);
+    float rpm = stepsPerSecond * 60 / (_stepsPerRevolution * _microstepping);
+
+    setSpeed(rpm); // Set the calculated RPM
+    moveSteps(steps, 1); // Assume direction is forward for simplicity
+}
+
