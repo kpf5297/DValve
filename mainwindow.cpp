@@ -64,3 +64,16 @@ void MainWindow::onHome_button_clicked()
     stepper.homeMotor();
 }
 
+void MainWindow::on_test_button_clicked() {
+
+    QString openTime = ui->open_duration_lineEdit->text();
+
+    stepper.moveStepsOverDuration(200,openTime.toInt());
+}
+
+void MainWindow::triggered_mode_enable_checked() {
+
+    // ui->open_triggered_checkBox->
+
+}
+

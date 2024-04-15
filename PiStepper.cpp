@@ -85,9 +85,6 @@ void PiStepper::moveAngle(float angle, int direction) {
 }
 
 void PiStepper::homeMotor() {
-    float stepDelay = 60.0 * 1000000 / (_speed * _stepsPerRevolution * _microstepping);
-
-    setSpeed(60); // Set a default speed for homing
 
     enable();
     const int direction = 0; // For closing the valve
@@ -98,9 +95,9 @@ void PiStepper::homeMotor() {
     
         // Move one step at a time towards the home position
         gpiod_line_set_value(step_signal, 1);
-        usleep(stepDelay / 2); // Half delay for pulse high
+        usleep(2500); // Half delay for pulse high
         gpiod_line_set_value(step_signal, 0);
-        usleep(stepDelay / 2); // Half delay for pulse low
+        usleep(2500); // Half delay for pulse low
     }
     _currentStepCount = 0; // Reset the step counter at the home position
     disable();

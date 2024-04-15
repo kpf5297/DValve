@@ -20,6 +20,10 @@ private slots:
 
     void onHome_button_clicked();
 
+    void on_test_button_clicked();
+
+    void triggered_mode_enable_checked();
+
 private:
     Ui::MainWindow *ui;
 };
