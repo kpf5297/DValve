@@ -477,28 +477,12 @@
    <slot>move_button_clicked()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>300</x>
-     <y>247</y>
+     <x>119</x>
+     <y>92</y>
     </hint>
     <hint type="destinationlabel">
      <x>224</x>
      <y>355</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>open_triggered_checkBox</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>triggered_mode_enable_checked()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>249</x>
-     <y>240</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>441</x>
-     <y>317</y>
     </hint>
    </hints>
   </connection>

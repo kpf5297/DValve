@@ -11,11 +11,13 @@ LIBS += -lgpiod -pthread
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    DigitalPin.cpp \
     PiStepper.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    DigitalPin.h \
     PiStepper.h \
     mainwindow.h
 

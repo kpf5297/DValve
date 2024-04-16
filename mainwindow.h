@@ -17,14 +17,14 @@ public:
 
 private slots:
     void move_button_clicked();
-
     void onHome_button_clicked();
-
     void on_test_button_clicked();
-
+    void checkTriggerPin();
     void triggered_mode_enable_checked();
 
 private:
     Ui::MainWindow *ui;
+    static QTimer* externalTriggerTimer;
+    static int absolutePosition;
 };
 #endif // MAINWINDOW_H

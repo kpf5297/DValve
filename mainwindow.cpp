@@ -1,9 +1,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "PiStepper.h"
+#include "DigitalPin.h"
 #include <QTimer>
 #include <QMessageBox>
 #include <QDebug>
+#include <QThread>
+
 
 int STEP_PIN = 27;
 int DIR_PIN = 17;
@@ -16,8 +19,14 @@ int DEFAULT_STEPS = 0;
 int DEFAULT_OPEN_DURATION = 90;
 int FULL_COUNT_RANGE = 1700;
 
-// Create a PiStepper object
+
 PiStepper stepper(STEP_PIN, DIR_PIN, ENABLE_PIN, STEPS_PER_REVOLUTION, MICROSTEPPING);
+
+DigitalPin triggerPin(16, DigitalPin::Direction::Input, "Trigger");
+
+QTimer* MainWindow::externalTriggerTimer = nullptr;
+
+int MainWindow::absolutePosition = 0;
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -26,20 +35,17 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    ui->direction_comboBox->addItem("Open", QVariant(1)); // Assuming 1 represents open
-    ui->direction_comboBox->addItem("Closed", QVariant(0)); // Assuming 0 represents closed
+    externalTriggerTimer = new QTimer(this);
+    connect(externalTriggerTimer, &QTimer::timeout, this, &MainWindow::checkTriggerPin);
+    externalTriggerTimer->start(1000); // 1 second (may need to be adjusted for response time)
 
-    ui->step_lineEdit->setText(QString::number(DEFAULT_STEPS));
+    ui->direction_comboBox->addItem("Open", QVariant(1));                           // Add the Open option to the dropdown
+    ui->direction_comboBox->addItem("Closed", QVariant(0));                         // Add the Closed option to the dropdown
+    ui->step_lineEdit->setText(QString::number(DEFAULT_STEPS));                     // Set the default steps value
+    ui->open_triggered_checkBox->setChecked(false);                                 // Set the default value for the triggered mode checkbox
+    ui->open_duration_lineEdit->setText(QString::number(DEFAULT_OPEN_DURATION));    // Set the default open duration values
 
-    ui->open_triggered_checkBox->setChecked(false);
-
-    ui->open_duration_lineEdit->setText(QString::number(DEFAULT_OPEN_DURATION));
-
-    // Set a timer to check if external trigger is enabled
-    // QTimer *timer = new QTimer(this); // Create a new QTimer
-    // connect(timer, SIGNAL(timeout()), this, SLOT(triggered_mode_enable_checked())); // Connect the timeout signal to the triggered_mode_enable_checked slot
-    // timer->start(1000);
-
+    stepper.homeMotor();
 }
 
 MainWindow::~MainWindow()
@@ -58,52 +64,98 @@ void MainWindow::move_button_clicked() {
     // Convert the text to an integer
     int stepValue = stepText.toInt(&ok);
 
-    if (ok) {
-        // The conversion was successful, use the integer value as needed
-    } else {
-        // The conversion failed (e.g., the text was not a valid integer)
-        // Handle the error, maybe show a message box or set a default value
+    // If the conversion failed, show an error message
+    if (!ok) {
+        QMessageBox::warning(this, "Error", "Invalid step value");
+        return;
+    }
+
+    // Verify that the step value is within the range
+    if (stepValue < 0 || stepValue > FULL_COUNT_RANGE) {
+        QMessageBox::warning(this, "Error", "Step value must be between 0 and 1700");
+        return;
+    }
+
+    // Remaining steps check 
+    if (absolutePosition + stepValue > FULL_COUNT_RANGE) {
+        QMessageBox::warning(this, "Error", "Cannot move past the maximum position");
+
+        // Enter the maximum position in the QLineEdit
+        ui->step_lineEdit->setText(QString::number(FULL_COUNT_RANGE - absolutePosition));
+
+        return;
+    } else if (absolutePosition + stepValue < 0) {
+        QMessageBox::warning(this, "Error", "Cannot move past the minimum position");
+
+        // Enter the minimum position in the QLineEdit
+        ui->step_lineEdit->setText(QString::number(-absolutePosition));
+        
+        return;
     }
 
     int directionValue = ui->direction_comboBox->currentData().toInt();
 
     stepper.moveSteps(stepValue,directionValue);
 
+    // Update the absolute position
+    if (directionValue == 1) {
+        absolutePosition += stepValue;
+    } else {
+        absolutePosition -= stepValue;
+    }
+
 }
-
-
 
 void MainWindow::onHome_button_clicked()
 {
     stepper.homeMotor();
+
+    // Reset the absolute position
+    absolutePosition = 0;
 }
 
 void MainWindow::on_test_button_clicked() {
+    bool ok;
+    QString openTimeText = ui->open_duration_lineEdit->text();
+    int openTime = openTimeText.toInt(&ok);
 
-    QString openTime = ui->open_duration_lineEdit->text();
-
-    // Ensure value is >= 8.5 seconds
-    if (openTime.toInt() < 8.5) {
-        openTime = "8.5";
-        ui->open_duration_lineEdit->setText(openTime);
+    if (!ok) {
+        QMessageBox::warning(this, "Error", "Invalid open duration value");
+        return;
     }
 
-    stepper.moveStepsOverDuration(FULL_COUNT_RANGE,openTime.toInt());
+    // Ensure value is in the range (Minimum of 8.5 seconds)
+    if (openTime < 8.5) {
+        openTime = 8.5;
+        ui->open_duration_lineEdit->setText(QString::number(openTime));
+    }
+
+    std::cout << "Opening for " << std::to_string(openTime) << " seconds" << std::endl;
+
+    stepper.moveStepsOverDuration(FULL_COUNT_RANGE,openTime);
+
+    // The GUI will remain responsive using this delay
+    QTimer::singleShot(1000, this, SLOT(someSlotFunction()));
+
+    stepper.homeMotor();
 }
 
-
+void MainWindow::checkTriggerPin() {
+    if (triggerPin.read() == 0) { // Trigger pin is LOW
+        qDebug() << "Trigger pin is LOW. Initiating action.";
+        on_test_button_clicked();
+    }
+}
 
 void MainWindow::triggered_mode_enable_checked() {
     if (ui->open_triggered_checkBox->isChecked()) {
-        QMessageBox::StandardButton reply = QMessageBox::information(this, "External trigger is enabled. Monitoring external trigger", "Close this dialog box to stop monitoring external trigger.");
-
-
+        externalTriggerTimer->start(100); // Start polling every 100 ms
+    } else {
+        externalTriggerTimer->stop();
     }
-
-    // Uncheck the checkbox
-    ui->open_triggered_checkBox->setChecked(false);
-
 }
+
+
 
 
 

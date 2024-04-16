@@ -13,8 +13,8 @@
 class DriverDigitalPin {
 public:
     DriverDigitalPin() 
-        : outputPin(17, DigitalPin::Direction::Output, "LED"), // Example pin for LED
-          inputPin(27, DigitalPin::Direction::Input, "Button") // Example pin for a button
+        : outputPin(6, DigitalPin::Direction::Output, "LED"), // Example pin for LED
+          inputPin(16, DigitalPin::Direction::Input, "Button") // Example pin for a button
     {}
 
     void run() {
