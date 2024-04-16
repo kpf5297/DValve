@@ -44,6 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->step_lineEdit->setText(QString::number(DEFAULT_STEPS));                     // Set the default steps value
     ui->open_triggered_checkBox->setChecked(false);                                 // Set the default value for the triggered mode checkbox
     ui->open_duration_lineEdit->setText(QString::number(DEFAULT_OPEN_DURATION));    // Set the default open duration values
+    ui->tabWidget->setCurrentIndex(0);
 
     stepper.homeMotor();
 }
