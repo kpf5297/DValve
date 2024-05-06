@@ -1,3 +1,11 @@
+/*
+    PiStepper.cpp - Library for controlling a stepper motor using a Raspberry Pi.
+    Created by Kevin Fox
+    24 April 2024
+
+    Updated to include same speed value used for opening and closing valve in the home_motor 
+    function.  It now uses the last used _speed value in its calcualaion for stepdelay
+*/
 #include "PiStepper.h"
 #include <cmath>
 #include <unistd.h>
@@ -90,14 +98,16 @@ void PiStepper::homeMotor() {
     const int direction = 0; // For closing the valve
     gpiod_line_set_value(dir_signal, direction);
 
+    float stepDelay = 60.0 * 1000000 / (_speed * _stepsPerRevolution * _microstepping); // delay in microseconds
+
     // Move the motor towards the bottom limit switch
-    while (gpiod_line_get_value(limit_switch_bottom) == 0) { // Assumes active high when triggered
+    while (gpiod_line_get_value(limit_switch_bottom) == 1) { // Assumes active high when triggered
     
         // Move one step at a time towards the home position
         gpiod_line_set_value(step_signal, 1);
-        usleep(2500); // Half delay for pulse high
+        usleep(stepDelay / 2); // Half delay for pulse high
         gpiod_line_set_value(step_signal, 0);
-        usleep(2500); // Half delay for pulse low
+        usleep(stepDelay / 2); // Half delay for pulse low
     }
     _currentStepCount = 0; // Reset the step counter at the home position
     disable();
@@ -121,6 +131,6 @@ void PiStepper::moveStepsOverDuration(int steps, int durationSeconds) {
     float rpm = stepsPerSecond * 60 / (_stepsPerRevolution * _microstepping);
 
     setSpeed(rpm); // Set the calculated RPM
-    moveSteps(steps, 1); // Assume direction is forward for simplicity
+    moveSteps(steps, 1); // Move the motor
 }
 

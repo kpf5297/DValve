@@ -135,9 +135,6 @@ void MainWindow::on_test_button_clicked() {
 
     stepper.moveStepsOverDuration(FULL_COUNT_RANGE,openTime);
 
-    // The GUI will remain responsive using this delay
-    QTimer::singleShot(1000, this, SLOT(someSlotFunction()));
-
     stepper.homeMotor();
 }
 
