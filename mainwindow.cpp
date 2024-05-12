@@ -20,23 +20,26 @@ int DEFAULT_OPEN_DURATION = 90;
 int FULL_COUNT_RANGE = 1700;
 
 
-PiStepper stepper(STEP_PIN, DIR_PIN, ENABLE_PIN, STEPS_PER_REVOLUTION, MICROSTEPPING);
-
-DigitalPin triggerPin(16, DigitalPin::Direction::Input, "Trigger");
-
-QTimer* MainWindow::externalTriggerTimer = nullptr;
-
-int MainWindow::absolutePosition = 0;
+PiStepper stepper(STEP_PIN, DIR_PIN, ENABLE_PIN, STEPS_PER_REVOLUTION, MICROSTEPPING);  // Create a stepper object
+DigitalPin triggerPin(16, DigitalPin::Direction::Input, "Triggered Input Pin");         // Create a digital pin object
+QTimer* MainWindow::externalTriggerTimer = nullptr;                                     // Create a timer object
+int MainWindow::absolutePosition = 0;                           // Initialize the absolute position
 
 
-MainWindow::MainWindow(QWidget *parent)
+/**
+ * @brief MainWindow::MainWindow
+ * @param parent
+ */
+MainWindow::MainWindow(QWidget *parent)         // Constructor
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    ui->setupUi(this);
+    ui->setupUi(this);  // Set up the UI
 
-    externalTriggerTimer = new QTimer(this);
-    connect(externalTriggerTimer, &QTimer::timeout, this, &MainWindow::checkTriggerPin);
+
+
+    externalTriggerTimer = new QTimer(this);    // Create a new timer object
+    connect(externalTriggerTimer, &QTimer::timeout, this, &MainWindow::checkTriggerPin);    // Connect the timer to the checkTriggerPin function
     externalTriggerTimer->start(1000); // 1 second (may need to be adjusted for response time)
 
     ui->direction_comboBox->addItem("Open", QVariant(1));                           // Add the Open option to the dropdown

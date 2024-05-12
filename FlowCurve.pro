@@ -13,18 +13,26 @@ LIBS += -lgpiod -pthread
 SOURCES += \
     DigitalPin.cpp \
     PiStepper.cpp \
+    Startupdialog.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     DigitalPin.h \
     PiStepper.h \
+    Startupdialog.h \
     mainwindow.h
 
 FORMS += \
+    Startupdialog.ui \
     mainwindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES +=
+
+RESOURCES += \
+    resources.qrc
