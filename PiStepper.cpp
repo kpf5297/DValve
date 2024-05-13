@@ -24,7 +24,7 @@ PiStepper::PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolut
     step_signal = gpiod_chip_get_line(chip, _stepPin);
     dir_signal = gpiod_chip_get_line(chip, _dirPin);
     enable_signal = gpiod_chip_get_line(chip, _enablePin);
-    // limit_switch_top = gpiod_chip_get_line(chip, LIMIT_SWITCH_TOP_PIN);
+    limit_switch_top = gpiod_chip_get_line(chip, LIMIT_SWITCH_TOP_PIN);
     limit_switch_bottom = gpiod_chip_get_line(chip, LIMIT_SWITCH_BOTTOM_PIN);
 
     // Configure GPIO pins
@@ -32,7 +32,7 @@ PiStepper::PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolut
     gpiod_line_request_output(dir_signal, "PiStepper_dir", 0);
     gpiod_line_request_output(enable_signal, "PiStepper_enable", 1);
     gpiod_line_request_input(limit_switch_bottom, "PiStepper_limit_bottom");
-    // gpiod_line_request_input(limit_switch_top, "PiStepper_limit_top");
+    gpiod_line_request_input(limit_switch_top, "PiStepper_limit_top");
 
     disable(); // Start with the motor disabled
 }
@@ -41,7 +41,7 @@ PiStepper::~PiStepper() {
     gpiod_line_release(step_signal);
     gpiod_line_release(dir_signal);
     gpiod_line_release(enable_signal);
-    // gpiod_line_release(limit_switch_top);
+    gpiod_line_release(limit_switch_top);
     gpiod_line_release(limit_switch_bottom);
     gpiod_chip_close(chip);
 }
@@ -69,6 +69,17 @@ void PiStepper::moveSteps(int steps, int direction) {
     float stepDelay = 60.0 * 1000000 / (_speed * _stepsPerRevolution * _microstepping); // delay in microseconds
 
     for (int i = 0; i < steps; i++) {
+
+        if(gpiod_line_get_value(limit_switch_top) == 0 && direction == 1) {
+            std::cout << "Top limit switch triggered" << std::endl;
+            break;
+        }
+
+        if(gpiod_line_get_value(limit_switch_bottom) == 0 && direction == 0) {
+            std::cout << "Bottom limit switch triggered" << std::endl;
+            break;
+        }
+        
         gpiod_line_set_value(step_signal, 1);
         usleep(stepDelay / 2); // Half delay for pulse high
         gpiod_line_set_value(step_signal, 0);

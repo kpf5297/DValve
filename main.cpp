@@ -1,10 +1,12 @@
 #include "mainwindow.h"
 #include "Startupdialog.h"
+#include <QStyleFactory>
 
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
+    QApplication::setStyle(QStyleFactory::create("Windows"));
     QApplication a(argc, argv);
 
     StartupDialog popup;

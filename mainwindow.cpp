@@ -36,8 +36,6 @@ MainWindow::MainWindow(QWidget *parent)         // Constructor
 {
     ui->setupUi(this);  // Set up the UI
 
-
-
     externalTriggerTimer = new QTimer(this);    // Create a new timer object
     connect(externalTriggerTimer, &QTimer::timeout, this, &MainWindow::checkTriggerPin);    // Connect the timer to the checkTriggerPin function
     externalTriggerTimer->start(1000); // 1 second (may need to be adjusted for response time)
@@ -61,43 +59,38 @@ void MainWindow::move_button_clicked() {
 
     // Convert the text to an integer
     bool ok;
-
-    // Read the text from QLineEdit
     QString stepText = ui->step_lineEdit->text();
-
-    // Convert the text to an integer
     int stepValue = stepText.toInt(&ok);
+
+    // Get the direction value
+    int directionValue = ui->direction_comboBox->currentData().toInt();
+
+    // Message to user
+    std::cout << "Requested " << stepValue << " steps in the " << (directionValue == 1 ? "open" : "closed") << " direction" << std::endl;
 
     // If the conversion failed, show an error message
     if (!ok) {
-        QMessageBox::warning(this, "Error", "Invalid step value");
+        QMessageBox::warning(this, "Error", "Invalid step value\nMove cancelled\nPlease enter a valid number between 0 and 1700");
         return;
     }
 
     // Verify that the step value is within the range
     if (stepValue < 0 || stepValue > FULL_COUNT_RANGE) {
-        QMessageBox::warning(this, "Error", "Step value must be between 0 and 1700");
+        QMessageBox::warning(this, "Error", "Outside move range.\n\nMove cancelled.\n\nStep value must be between 0 and 1700");
         return;
     }
 
-    // Remaining steps check 
-    if (absolutePosition + stepValue > FULL_COUNT_RANGE) {
-        QMessageBox::warning(this, "Error", "Cannot move past the maximum position");
-
-        // Enter the maximum position in the QLineEdit
-        ui->step_lineEdit->setText(QString::number(FULL_COUNT_RANGE - absolutePosition));
-
+    // Using direction and absolute movement, determine if the move is valid
+    if (directionValue == 1 && absolutePosition + stepValue > FULL_COUNT_RANGE) {
+        QMessageBox::warning(this, "Error", "Outside move range.\n\nMove cancelled.\n\nCannot move past 1700");
         return;
-    } else if (absolutePosition + stepValue < 0) {
-        QMessageBox::warning(this, "Error", "Cannot move past the minimum position");
-
-        // Enter the minimum position in the QLineEdit
-        ui->step_lineEdit->setText(QString::number(-absolutePosition));
-        
+    } else if (directionValue == 0 && absolutePosition - stepValue < 0) {
+        QMessageBox::warning(this, "Error", "Outside move range.\n\nMove cancelled.\n\nCannot move past 0");
         return;
     }
-
-    int directionValue = ui->direction_comboBox->currentData().toInt();
+    
+    // Message to user
+    std::cout << "Moving " << stepValue << " steps in the " << (directionValue == 1 ? "open" : "closed") << " direction" << std::endl;
 
     stepper.moveSteps(stepValue,directionValue);
 

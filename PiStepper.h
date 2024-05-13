@@ -7,6 +7,7 @@
 
 // GPIO pin for the bottom limit switch
 #define LIMIT_SWITCH_BOTTOM_PIN 21
+#define LIMIT_SWITCH_TOP_PIN 20
 
 class PiStepper {
 public:
@@ -49,7 +50,7 @@ private:
     gpiod_line *dir_signal;
     gpiod_line *enable_signal;
     gpiod_line *limit_switch_bottom;
-    // gpiod_line *limit_switch_top;
+    gpiod_line *limit_switch_top;
 
     // Private methods
     float stepsToAngle(int steps); // Convert steps to angle
