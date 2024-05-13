@@ -29,6 +29,12 @@
    </item>
    <item>
     <widget class="QLabel" name="image_label">
+     <property name="maximumSize">
+      <size>
+       <width>500</width>
+       <height>500</height>
+      </size>
+     </property>
      <property name="text">
       <string>TextLabel</string>
      </property>
