@@ -1,3 +1,7 @@
+/*
+    g++ -o pid_valve_controller PIDValveDriver.cpp TSI40xx.cpp PiStepper.cpp PIDValveController.cpp SerialPortManager.cpp -lgpiod -pthread
+*/
+
 #include "TSI40xx.h"
 #include "PiStepper.h"
 #include "PIDValveController.h"
@@ -7,6 +11,9 @@
 #include <atomic>
 #include <termios.h>
 #include <unistd.h>
+
+const int STABLE_READINGS_COUNT = 5; // Number of stable readings required
+const double FLOW_TOLERANCE = 5.0;   // Tolerance for flow rate
 
 // Function to set terminal to non-blocking mode
 void setNonBlockingMode() {
@@ -28,47 +35,52 @@ void restoreBlockingMode() {
     tcsetattr(STDIN_FILENO, TCSANOW, &ttystate);
 }
 
-// Function to handle user input
-void userInputHandler(PIDValveController* controller, std::atomic<bool>& running) {
-    setNonBlockingMode();
+// Function to handle menu options
+void displayMenu() {
+    std::cout << "Menu Options:\n";
+    std::cout << "1. Set target flow rate\n";
+    std::cout << "2. Adjust PID constants\n";
+    std::cout << "3. Check status\n";
+    std::cout << "4. Exit\n";
+    std::cout << "Enter your choice: ";
+}
 
-    while (running) {
-        if (std::cin.peek() != EOF) {
-            std::string command;
-            std::cin >> command;
-
-            if (command == "setpoint") {
-                double setPoint;
-                std::cout << "Enter new setpoint: ";
-                std::cin >> setPoint;
-                controller->setSetPoint(setPoint);
-                std::cout << "Setpoint updated to " << setPoint << std::endl;
-            } else if (command == "pid") {
-                double kp, ki, kd;
-                std::cout << "Enter new PID constants (kp ki kd): ";
-                std::cin >> kp >> ki >> kd;
-                controller->setPIDConstants(kp, ki, kd);
-                std::cout << "PID constants updated to kp=" << kp << ", ki=" << ki << ", kd=" << kd << std::endl;
-            } else if (command == "stop") {
-                controller->stopControlLoop();
-                running = false;
-                std::cout << "Control loop stopped." << std::endl;
-                break;
-            } else if (command == "status") {
-                double kp, ki, kd;
-                controller->getPIDConstants(kp, ki, kd);
-                std::cout << "Current Flow: " << controller->getCurrentFlow() << std::endl;
-                std::cout << "Setpoint: " << controller->getSetPoint() << std::endl;
-                std::cout << "PID constants: kp=" << kp << ", ki=" << ki << ", kd=" << kd << std::endl;
-            } else {
-                std::cout << "Invalid command. Available commands: setpoint, pid, stop, status" << std::endl;
+void handleMenuOption(PIDValveController* controller, std::atomic<bool>& running) {
+    int choice;
+    std::cin >> choice;
+    switch (choice) {
+        case 1: {
+            double targetFlow;
+            std::cout << "Enter target flow rate: ";
+            std::cin >> targetFlow;
+            bool result = controller->adjustFlowToTarget(targetFlow, FLOW_TOLERANCE, STABLE_READINGS_COUNT);
+            if (result) {
+                std::cout << "Flow adjusted to target and is stable.\n";
             }
+            break;
         }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        case 2: {
+            double kp, ki, kd;
+            std::cout << "Enter new PID constants (kp ki kd): ";
+            std::cin >> kp >> ki >> kd;
+            controller->setPIDConstants(kp, ki, kd);
+            std::cout << "PID constants updated to kp=" << kp << ", ki=" << ki << ", kd=" << kd << "\n";
+            break;
+        }
+        case 3: {
+            double kp, ki, kd;
+            controller->getPIDConstants(kp, ki, kd);
+            std::cout << "Current Flow: " << controller->getCurrentFlow() << "\n";
+            std::cout << "Setpoint: " << controller->getSetPoint() << "\n";
+            std::cout << "PID constants: kp=" << kp << ", ki=" << ki << ", kd=" << kd << "\n";
+            break;
+        }
+        case 4:
+            running = false;
+            break;
+        default:
+            std::cout << "Invalid choice. Please try again.\n";
     }
-
-    restoreBlockingMode();
 }
 
 int main() {
@@ -84,16 +96,14 @@ int main() {
         stepperMotor.calibrate();
 
         // Initialize the PIDValveController
-        double initialSetPoint = 80.0; // Example initial setpoint
-        double kp = 1.0, ki = 0.1, kd = 0.01; // Example PID constants
+        double initialSetPoint = 100.0; // Example initial setpoint
+        double kp = 2.0, ki = 0.05, kd = 0.1; // Example PID constants, these may need further tuning
         PIDValveController pidController(&flowMeter, &stepperMotor, initialSetPoint, kp, ki, kd);
 
-        // Start the control loop
-        pidController.startControlLoop();
-
-        // Handle user input in a separate thread
-        std::thread inputThread(userInputHandler, &pidController, std::ref(running));
-        inputThread.join();
+        while (running) {
+            displayMenu();
+            handleMenuOption(&pidController, running);
+        }
 
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
