@@ -1,16 +1,3 @@
-/*
-    PiStepper.h
-
-    Provides an interface for controlling a stepper motor using a Raspberry Pi and the libgpiod library.
-    This class allows for setting motor speed, acceleration, microstepping, and supports operations like
-    moving a specific number of steps or to a specific angle. It also includes homing functionality using
-    limit switches, emergency stop, and non-blocking move operations.
-
-    Author: Kevin Fox
-    Date: May 20, 2024
-    Location: Pittsburgh, PA
-*/
-
 #ifndef PiStepper_h
 #define PiStepper_h
 
@@ -20,40 +7,144 @@
 #include <thread>
 #include <functional>
 
-#define LIMIT_SWITCH_BOTTOM_PIN 21
-#define LIMIT_SWITCH_TOP_PIN 20
-
+/**
+ * @class PiStepper
+ * @brief A class for controlling a stepper motor using GPIO on a Raspberry Pi.
+ * 
+ * This class provides methods to control a stepper motor, including moving the motor by steps or angles, 
+ * setting speed and acceleration, and calibrating the motor using limit switches.
+ */
 class PiStepper {
 public:
+    /**
+     * @brief Constructor for PiStepper.
+     * @param stepPin The GPIO pin number for the step signal.
+     * @param dirPin The GPIO pin number for the direction signal.
+     * @param enablePin The GPIO pin number for the enable signal.
+     * @param stepsPerRevolution The number of steps per full revolution of the motor.
+     * @param microstepping The microstepping value for the motor.
+     */
     PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolution = 200, int microstepping = 8);
+
+    /**
+     * @brief Destructor for PiStepper.
+     */
     ~PiStepper();
 
-    // Setters
-    void setSpeed(float speed); // Set the speed of the stepper motor in RPM
-    void setAcceleration(float acceleration); // Set the acceleration of the stepper motor in RPM/s
-    void setMicrostepping(int microstepping); // Set the microstepping value for the stepper motor
+    /**
+     * @brief Sets the speed of the stepper motor.
+     * @param speed The speed in RPM.
+     */
+    void setSpeed(float speed);
 
-    // Stepper control
-    void enable(); // Enable the stepper motor
-    void disable(); // Disable the stepper motor
-    void moveSteps(int steps, int direction); // Move the stepper motor a specified number of steps in a specified direction
-    void moveAngle(float angle, int direction); // Move the stepper motor a specified angle in a specified direction
-    void moveStepsOverDuration(int steps, int durationSeconds); // Move the stepper motor a specified number of steps over a specified duration
-    void moveStepsAsync(int steps, int direction, std::function<void()> callback); // Move steps asynchronously
-    void moveToPercentOpen(float percent, std::function<void()> callback = nullptr); // Move to a specified percentage open
-    void stopMovement(); // Stop any ongoing movement
-    void emergencyStop(); // Immediately stop the motor and disable it
+    /**
+     * @brief Sets the maximum speed of the stepper motor.
+     * @param maxSpeed The maximum speed in RPM.
+     */
+    void setMaxSpeed(float maxSpeed);
 
-    // Homing and calibration
-    void homeMotor(); // Move the motor towards a limit switch to define a home position
-    void calibrate(); // Calibrate the motor to determine the full range of motion
+    /**
+     * @brief Sets the acceleration of the stepper motor.
+     * @param acceleration The acceleration in RPM/s.
+     */
+    void setAcceleration(float acceleration);
 
-    // Position tracking
-    int getCurrentStepCount() const; // Get the current step count relative to the starting position
-    int getFullRangeCount() const; // Get the full range of motion determined during calibration
-    float getPercentOpen() const; // Get the current position as a percentage open
+    /**
+     * @brief Enables the stepper motor.
+     */
+    void enable();
+
+    /**
+     * @brief Disables the stepper motor.
+     */
+    void disable();
+
+    /**
+     * @brief Moves the stepper motor a specified number of steps.
+     * @param steps The number of steps to move.
+     * @param direction The direction to move (0 for closed, 1 for open).
+     */
+    void moveSteps(int steps, int direction);
+
+    /**
+     * @brief Moves the stepper motor a specified angle.
+     * @param angle The angle to move in degrees.
+     * @param direction The direction to move (0 for closed, 1 for open).
+     */
+    void moveAngle(float angle, int direction);
+
+    /**
+     * @brief Moves the stepper motor asynchronously a specified number of steps.
+     * @param steps The number of steps to move.
+     * @param direction The direction to move (0 for closed, 1 for open).
+     * @param callback A callback function to call when the movement is complete.
+     */
+    void moveStepsAsync(int steps, int direction, std::function<void()> callback);
+
+    /**
+     * @brief Stops the movement of the stepper motor.
+     */
+    void stopMovement();
+
+    /**
+     * @brief Performs an emergency stop of the stepper motor.
+     */
+    void emergencyStop();
+
+    /**
+     * @brief Calibrates the stepper motor using the limit switches.
+     */
+    void calibrate();
+
+    /**
+     * @brief Moves the stepper motor to a specified percent open position.
+     * @param percent The percent open position (0-100).
+     * @param callback A callback function to call when the movement is complete.
+     */
+    void moveToPercentOpen(float percent, std::function<void()> callback);
+
+    /**
+     * @brief Moves the stepper motor to the fully open position.
+     */
+    void moveToFullyOpen();
+
+    /**
+     * @brief Moves the stepper motor to the fully closed position.
+     */
+    void moveToFullyClosed();
+
+    /**
+     * @brief Gets the current step count of the stepper motor.
+     * @return The current step count.
+     */
+    int getCurrentStepCount() const;
+
+    /**
+     * @brief Gets the full range step count of the stepper motor.
+     * @return The full range step count.
+     */
+    int getFullRangeCount() const;
+
+    /**
+     * @brief Gets the percent open position of the stepper motor.
+     * @return The percent open position.
+     */
+    float getPercentOpen() const;
+
+    /**
+     * @brief Checks if the stepper motor is currently moving.
+     * @return True if the motor is moving, false otherwise.
+     */
+    bool isMoving() const;
 
 private:
+    /**
+     * @brief Converts steps to angle in degrees.
+     * @param steps The number of steps.
+     * @return The angle in degrees.
+     */
+    float stepsToAngle(int steps);
+
     // GPIO pin assignments
     int _stepPin;
     int _dirPin;
@@ -61,10 +152,12 @@ private:
     int _stepsPerRevolution;
     int _microstepping;
     float _speed;
+    float _maxSpeed;
     float _acceleration;
     int _currentStepCount; // Tracks the current step position relative to the starting point
-    int _fullRangeCount; // Stores the full range of motion determined during calibration
-    bool _isMoving; // Flag to indicate if the motor is moving
+    int _fullRangeCount; // The total range of steps between limit switches
+    bool _isMoving; // Indicates if the motor is currently moving
+    bool _isCalibrated; // Indicates if the motor has been calibrated
 
     // GPIO chip and line pointers
     gpiod_chip *chip;
@@ -75,8 +168,6 @@ private:
     gpiod_line *limit_switch_top;
 
     // Private methods
-    void internalMoveSteps(int steps, int direction); // Internal method to handle step movement
-    float stepsToAngle(int steps); // Convert steps to angle
     std::mutex gpioMutex; // Mutex for thread-safe GPIO access
 };
 
