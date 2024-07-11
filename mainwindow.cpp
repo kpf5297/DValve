@@ -1,53 +1,34 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "PiStepper.h"
-#include "DigitalPin.h"
-#include <QTimer>
-#include <QMessageBox>
-#include <QDebug>
-#include <QThread>
 
-
-int STEP_PIN = 27;
-int DIR_PIN = 17;
-int ENABLE_PIN = 22;
-int STEPS_PER_REVOLUTION = 200;
-int MICROSTEPPING = 1;
-
-int DEFAULT_DIRECTION = 0;
-int DEFAULT_STEPS = 0;
-int DEFAULT_OPEN_DURATION = 90;
-int FULL_COUNT_RANGE = 1700;
-
-
-PiStepper stepper(STEP_PIN, DIR_PIN, ENABLE_PIN, STEPS_PER_REVOLUTION, MICROSTEPPING);  // Create a stepper object
-DigitalPin triggerPin(16, DigitalPin::Direction::Input, "Triggered Input Pin");         // Create a digital pin object
-QTimer* MainWindow::externalTriggerTimer = nullptr;                                     // Create a timer object
-int MainWindow::absolutePosition = 0;                           // Initialize the absolute position
-
-
-/**
- * @brief MainWindow::MainWindow
- * @param parent
- */
-MainWindow::MainWindow(QWidget *parent)         // Constructor
+MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , stepper(new PiStepper(27, 17, 22, 200, 1))
+    , timer(new QTimer(this))
 {
-    ui->setupUi(this);  // Set up the UI
+    ui->setupUi(this);
+    ui->stackedWidget->setCurrentIndex(0);
 
-    externalTriggerTimer = new QTimer(this);    // Create a new timer object
-    connect(externalTriggerTimer, &QTimer::timeout, this, &MainWindow::checkTriggerPin);    // Connect the timer to the checkTriggerPin function
-    externalTriggerTimer->start(1000); // 1 second (may need to be adjusted for response time)
+    ui->speed_lineEdit->setText(QString::number(stepper->getSpeed()));
+    ui->microstep_lineEdit->setText(QString::number(stepper->getMicrostepping()));
+    ui->occlusionPctSet_lineEdit->setText(QString::number(stepper->getPercentOpen()));
 
-    ui->direction_comboBox->addItem("Open", QVariant(1));                           // Add the Open option to the dropdown
-    ui->direction_comboBox->addItem("Closed", QVariant(0));                         // Add the Closed option to the dropdown
-    ui->step_lineEdit->setText(QString::number(DEFAULT_STEPS));                     // Set the default steps value
-    ui->open_triggered_checkBox->setChecked(false);                                 // Set the default value for the triggered mode checkbox
-    ui->open_duration_lineEdit->setText(QString::number(DEFAULT_OPEN_DURATION));    // Set the default open duration values
-    ui->tabWidget->setCurrentIndex(0);
+    ui->rel_openClose_comboBox->addItem("Open Valve");
+    ui->rel_openClose_comboBox->addItem("Close Valve");
 
-    stepper.homeMotor();
+    connect(ui->actionExit_Valve_Program, &QAction::triggered, this, &MainWindow::on_actionExit_Valve_Program_triggered);
+    connect(ui->cal_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_cal_clicked()));
+    connect(ui->fullOpen_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_fullOpen_clicked()));
+    connect(ui->fullClose_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_fullClose_clicked()));
+    connect(ui->pctMove_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_absMove_clicked()));
+    connect(ui->relative_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_relMove_clicked()));
+
+    connect(timer, &QTimer::timeout, this, &MainWindow::on_timer_updateProgressBar);
+
+    connect(ui->settings_buttonBox, &QDialogButtonBox::accepted, this, &MainWindow::on_settingsOk_clicked);
+
+    timer->start(1000);
 }
 
 MainWindow::~MainWindow()
@@ -55,101 +36,120 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::move_button_clicked() {
+void MainWindow::on_settings_toolButton_clicked() {
+    // Update displays
+    ui->speed_lineEdit->setText(QString::number(stepper->getSpeed()));
+    ui->microstep_lineEdit->setText(QString::number(stepper->getMicrostepping()));
 
-    // Convert the text to an integer
+    // Display settings tab
+    ui->stackedWidget->setCurrentIndex(2);
+
+}
+void MainWindow::on_relative_toolButton_clicked() {
+    ui->stackedWidget->setCurrentIndex(3);
+
+}
+void MainWindow::on_absolute_toolButton_clicked() {
+    ui->occlusionPctSet_lineEdit->setText(QString::number(stepper->getPercentOpen()));
+
+    ui->stackedWidget->setCurrentIndex(1);
+}
+
+void MainWindow::on_actionExit_Valve_Program_triggered() {
+    QApplication::quit();
+}
+
+void MainWindow::on_cal_clicked() {
+    stepper->calibrate();
+}
+
+void MainWindow::on_fullOpen_clicked() {
+    stepper->moveToFullyOpen();
+}
+
+void MainWindow::on_fullClose_clicked() {
+    stepper->moveToFullyClosed();
+}
+
+void MainWindow::on_absMove_clicked() {
+
     bool ok;
-    QString stepText = ui->step_lineEdit->text();
-    int stepValue = stepText.toInt(&ok);
 
-    // Get the direction value
-    int directionValue = ui->direction_comboBox->currentData().toInt();
+    float value = ui->occlusionPctSet_lineEdit->text().toFloat(&ok);
 
-    // Message to user
-    std::cout << "Requested " << stepValue << " steps in the " << (directionValue == 1 ? "open" : "closed") << " direction" << std::endl;
-
-    // If the conversion failed, show an error message
-    if (!ok) {
-        QMessageBox::warning(this, "Error", "Invalid step value\nMove cancelled\nPlease enter a valid number between 0 and 1700");
+    if(!ok) {
+        QMessageBox::warning(this, "Invalid input", "Please enter a valid number");
         return;
     }
 
-    // Verify that the step value is within the range
-    if (stepValue < 0 || stepValue > FULL_COUNT_RANGE) {
-        QMessageBox::warning(this, "Error", "Outside move range.\n\nMove cancelled.\n\nStep value must be between 0 and 1700");
+    if ((value < 1.0) || (value > 100.0)) {
+        QMessageBox::warning(this, "Out of range", "Please enter a number between 1 and 100");
+
         return;
     }
 
-    // Using direction and absolute movement, determine if the move is valid
-    if (directionValue == 1 && absolutePosition + stepValue > FULL_COUNT_RANGE) {
-        QMessageBox::warning(this, "Error", "Outside move range.\n\nMove cancelled.\n\nCannot move past 1700");
-        return;
-    } else if (directionValue == 0 && absolutePosition - stepValue < 0) {
-        QMessageBox::warning(this, "Error", "Outside move range.\n\nMove cancelled.\n\nCannot move past 0");
-        return;
-    }
-    
-    // Message to user
-    std::cout << "Moving " << stepValue << " steps in the " << (directionValue == 1 ? "open" : "closed") << " direction" << std::endl;
-
-    stepper.moveSteps(stepValue,directionValue);
-
-    // Update the absolute position
-    if (directionValue == 1) {
-        absolutePosition += stepValue;
-    } else {
-        absolutePosition -= stepValue;
-    }
-
+    stepper->moveToPercentOpen(value, []() {
+            std::cout << "Move to Percent Open operation completed." << std::endl;
+        });
 }
 
-void MainWindow::onHome_button_clicked()
-{
-    stepper.homeMotor();
+void MainWindow::on_relMove_clicked() {
 
-    // Reset the absolute position
-    absolutePosition = 0;
-}
+    QString direction = ui->rel_openClose_comboBox->currentText();
+    int dir = (direction == "Open Valve") ? 1 : 0;
 
-void MainWindow::on_test_button_clicked() {
     bool ok;
-    QString openTimeText = ui->open_duration_lineEdit->text();
-    int openTime = openTimeText.toInt(&ok);
+
+    float value = ui->rel_stepCount_linEdit->text().toInt(&ok);
 
     if (!ok) {
-        QMessageBox::warning(this, "Error", "Invalid open duration value");
+        QMessageBox::warning(this, "Invalid Input", "Please enter a valid number");
         return;
     }
 
-    // Ensure value is in the range (Minimum of 8.5 seconds)
-    if (openTime < 8.5) {
-        openTime = 8.5;
-        ui->open_duration_lineEdit->setText(QString::number(openTime));
-    }
-
-    std::cout << "Opening for " << std::to_string(openTime) << " seconds" << std::endl;
-
-    stepper.moveStepsOverDuration(FULL_COUNT_RANGE,openTime);
-
-    stepper.homeMotor();
-}
-
-void MainWindow::checkTriggerPin() {
-    if (triggerPin.read() == 0) { // Trigger pin is LOW
-        qDebug() << "Trigger pin is LOW. Initiating action.";
-        on_test_button_clicked();
-    }
-}
-
-void MainWindow::triggered_mode_enable_checked() {
-    if (ui->open_triggered_checkBox->isChecked()) {
-        externalTriggerTimer->start(100); // Start polling every 100 ms
+    int availableSteps = 0;
+    if (dir == 1) {
+        availableSteps = stepper->getFullRangeCount() - stepper->getCurrentStepCount();
     } else {
-        externalTriggerTimer->stop();
+        availableSteps = stepper->getCurrentStepCount();
     }
+
+    if ((value < 1.0) || (value > availableSteps)) {
+        QMessageBox::warning(this, "Out of range", QString("Please enter a number between 1 and %1").arg(availableSteps));
+        return;
+    }
+
+
+
+    stepper->moveStepsAsync(value, dir, []() {
+        std::cout << "Move Steps operation completed." << std::endl;
+    });
+
 }
 
 
+void MainWindow::on_timer_updateProgressBar() {
+    int percent = stepper->getPercentOpen();
+    ui->valve_pos_progressBar->setValue(percent);
+}
 
+void MainWindow::on_settingsOk_clicked() {
+    bool ok;
+    int userSpeed = ui->speed_lineEdit->text().toInt(&ok);
 
+    if (!ok) {
+        QMessageBox::warning(this,"Invalid Input", "Please enter a valid number.");
+        return;
+    }
 
+    if ((userSpeed < 1) || (userSpeed > 20)) {
+        QMessageBox::warning(this, "Out of Range", "Please enter a whole number between 1 and 20");
+        return;
+    } else {
+        stepper->setSpeed(userSpeed);
+    }
+}
+
+void MainWindow::on_settingsCancel_clicked() {
+
+}

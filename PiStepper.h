@@ -27,6 +27,12 @@ public:
     void setAcceleration(float acceleration); // Set the acceleration of the stepper motor in RPM/s
     void setMicrostepping(int microstepping); // Set the microstepping value for the stepper motor
 
+    // Getters
+    int getStepsPerRevolution() const; // Get the number of steps per revolution
+    int getMicrostepping() const; // Get the microstepping value
+    float getSpeed() const; // Get the speed of the stepper motor in RPM
+    float getAcceleration() const; // Get the acceleration of the stepper motor in RPM/s
+
     // Stepper control
     void enable(); // Enable the stepper motor
     void disable(); // Disable the stepper motor
@@ -63,6 +69,8 @@ private:
     int _fullRangeCount; // The number of steps from fully closed to fully open
     bool _isMoving; // Flag to indicate if the motor is moving
     bool _isCalibrated; // Flag to indicate if the motor has been calibrated
+
+
 
     // GPIO chip and line pointers
     gpiod_chip *chip;

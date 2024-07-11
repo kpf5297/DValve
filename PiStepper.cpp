@@ -223,3 +223,19 @@ void PiStepper::moveToFullyClosed() {
     }
     moveSteps(_currentStepCount, 0);
 }
+
+int PiStepper::getStepsPerRevolution() const {
+    return _stepsPerRevolution;
+}
+
+int PiStepper::getMicrostepping() const {
+    return _microstepping;
+}
+
+float PiStepper::getSpeed() const {
+    return _speed;
+}
+
+float PiStepper::getAcceleration() const {
+    return _acceleration;
+}

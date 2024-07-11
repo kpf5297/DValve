@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <PiStepper.h>
+#include <QMessageBox>
+#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -16,15 +19,28 @@ public:
     ~MainWindow();
 
 private slots:
-    void move_button_clicked();
-    void onHome_button_clicked();
-    void on_test_button_clicked();
-    void checkTriggerPin();
-    void triggered_mode_enable_checked();
+    void on_settings_toolButton_clicked();
+    void on_relative_toolButton_clicked();
+    void on_absolute_toolButton_clicked();
+
+    void on_actionExit_Valve_Program_triggered();
+
+    void on_cal_clicked();
+
+    void on_absMove_clicked();
+    void on_fullOpen_clicked();
+    void on_fullClose_clicked();
+
+    void on_relMove_clicked();
+
+    void on_timer_updateProgressBar();
+
+    void on_settingsOk_clicked();
+    void on_settingsCancel_clicked();
 
 private:
     Ui::MainWindow *ui;
-    static QTimer* externalTriggerTimer;
-    static int absolutePosition;
+    PiStepper *stepper;
+    QTimer *timer; // Timer to update display outputs
 };
 #endif // MAINWINDOW_H
