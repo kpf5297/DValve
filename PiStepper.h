@@ -8,10 +8,18 @@
 
 #define LIMIT_SWITCH_BOTTOM_PIN 21
 #define LIMIT_SWITCH_TOP_PIN 20
+#define STEPS_PER_REVOLUTION 200
+#define MICROSTEPPING 1
+#define DEFAULT_SPEED 20
+#define DEFAULT_ACCELERATION 80
+#define STEP_PIN 17
+#define DIR_PIN 27
+#define ENABLE_PIN 22
 
 class PiStepper {
 public:
-    PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolution = 200, int microstepping = 8);
+    PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolution, int microstepping);
+    PiStepper();
     ~PiStepper();
 
     // Setters

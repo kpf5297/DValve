@@ -9,8 +9,8 @@ PiStepper::PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolut
     _enablePin(enablePin),
     _stepsPerRevolution(stepsPerRevolution),
     _microstepping(microstepping),
-    _speed(20), // Default speed in RPM
-    _acceleration(80), // Default acceleration in RPM/s
+    _speed(DEFAULT_SPEED), // Default speed in RPM
+    _acceleration(DEFAULT_ACCELERATION), // Default acceleration in RPM/s
     _currentStepCount(0), // Initialize step counter to 0
     _fullRangeCount(0), // Initialize full range count to 0
     _isMoving(false), // Initialize moving flag to false
@@ -32,6 +32,9 @@ PiStepper::PiStepper(int stepPin, int dirPin, int enablePin, int stepsPerRevolut
 
     disable(); // Start with the motor disabled
 }
+
+PiStepper::PiStepper() :
+    PiStepper(STEP_PIN, DIR_PIN, ENABLE_PIN, STEPS_PER_REVOLUTION, MICROSTEPPING) {};
 
 PiStepper::~PiStepper() {
     gpiod_line_release(step_signal);
