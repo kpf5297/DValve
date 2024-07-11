@@ -17,6 +17,16 @@ MainWindow::MainWindow(QWidget *parent)
     ui->rel_openClose_comboBox->addItem("Open Valve");
     ui->rel_openClose_comboBox->addItem("Close Valve");
 
+    ui->qu1_comboBox->addItem("Open Valve");
+    ui->qu1_comboBox->addItem("Close Valve");
+
+    ui->qu2_comboBox->addItem("Open Valve");
+    ui->qu2_comboBox->addItem("Close Valve");
+    ui->qu3_comboBox->addItem("Open Valve");
+    ui->qu3_comboBox->addItem("Close Valve");
+    ui->qu4_comboBox->addItem("Open Valve");
+    ui->qu4_comboBox->addItem("Close Valve");
+
     connect(ui->actionExit_Valve_Program, &QAction::triggered, this, &MainWindow::on_actionExit_Valve_Program_triggered);
     connect(ui->cal_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_cal_clicked()));
     connect(ui->fullOpen_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_fullOpen_clicked()));
