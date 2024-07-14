@@ -46,7 +46,9 @@ PiStepper::~PiStepper() {
 }
 
 void PiStepper::setSpeed(float speed) {
-    _speed = speed;
+    if (speed <= MAX_SPEED) {
+        _speed = speed;
+    }
 }
 
 void PiStepper::setAcceleration(float acceleration) {
@@ -213,7 +215,11 @@ void PiStepper::moveToFullyOpen() {
         std::cerr << "Calibration is required before moving the motor." << std::endl;
         return;
     }
-    moveSteps(_fullRangeCount - _currentStepCount, 1);
+    moveStepsAsync(_fullRangeCount - _currentStepCount, 1, [this]() {
+        std::cout << "Motor moved to fully open position." << std::endl;
+    });
+    
+    // moveSteps(_fullRangeCount - _currentStepCount, 1);
 }
 
 void PiStepper::moveToFullyClosed() {
@@ -221,7 +227,11 @@ void PiStepper::moveToFullyClosed() {
         std::cerr << "Calibration is required before moving the motor." << std::endl;
         return;
     }
-    moveSteps(_currentStepCount, 0);
+    moveStepsAsync(_currentStepCount, 0, [this]() {
+        std::cout << "Motor moved to fully closed position." << std::endl;
+    });
+
+    // moveSteps(_currentStepCount, 0);
 }
 
 int PiStepper::getStepsPerRevolution() const {

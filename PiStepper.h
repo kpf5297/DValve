@@ -15,6 +15,7 @@
 #define STEP_PIN 17
 #define DIR_PIN 27
 #define ENABLE_PIN 22
+#define MAX_SPEED 60
 
 class PiStepper {
 public:

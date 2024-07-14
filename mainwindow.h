@@ -2,9 +2,13 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QListView>
+#include <QStringListModel>
 #include <PiStepper.h>
 #include <QMessageBox>
 #include <QTimer>
+#include <QGraphicsScene>
+#include <QLabel>  // Add this line
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -38,9 +42,25 @@ private slots:
     void on_settingsOk_clicked();
     void on_settingsCancel_clicked();
 
+    void on_emergencyStop_clicked();
+
+    void on_startPageOk_clicked();
+
 private:
     Ui::MainWindow *ui;
     PiStepper *stepper;
     QTimer *timer; // Timer to update display outputs
+
+    QListView *logListView;
+    QStringListModel *logModel;
+    QStringList logMessages;
+
+    QGraphicsScene *scene;
+    void setupStartPageGraphics();
+
+    void setUIEnabled(bool enabled);
+
+    void addLogMessage(const QString &message);
 };
+
 #endif // MAINWINDOW_H
