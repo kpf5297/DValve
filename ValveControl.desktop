@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Valve Control
+Comment=Control the valve using this application
+Exec=/home/test/Documents/build-motorized_valve_v2-Desktop-Release/motorized_valve_v2
+Icon=/home/test/Documents/DValve/icon.png
+Terminal=false
+

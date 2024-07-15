@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>motor_valve.png</file>
+        <file>motorized_valve.jpg</file>
+    </qresource>
+</RCC>
