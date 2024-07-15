@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>940</width>
+    <width>942</width>
     <height>831</height>
    </rect>
   </property>
@@ -91,6 +91,10 @@ background-color: rgb(255, 175, 175);</string>
                 <property name="text">
                  <string>Emergency Stop</string>
                 </property>
+                <property name="icon">
+                 <iconset theme="process-stop">
+                  <normaloff>.</normaloff>.</iconset>
+                </property>
                </widget>
               </item>
              </layout>
@@ -158,10 +162,13 @@ background-color: rgb(255, 175, 175);</string>
           <item>
            <widget class="QFrame" name="frame_3">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::WinPanel</enum>
             </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
+            </property>
+            <property name="lineWidth">
+             <number>10</number>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_10">
              <item>
@@ -232,7 +239,7 @@ background-color: rgb(255, 175, 175);</string>
         <item>
          <widget class="QStackedWidget" name="stackedWidget">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="start_page">
            <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -246,12 +253,18 @@ background-color: rgb(255, 175, 175);</string>
               </property>
               <property name="font">
                <font>
-                <pointsize>15</pointsize>
+                <pointsize>20</pointsize>
                 <bold>true</bold>
                </font>
               </property>
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 78, 43);</string>
+              </property>
               <property name="text">
                <string>Ensure connections as shown!</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -300,7 +313,7 @@ background-color: rgb(255, 175, 175);</string>
                   </font>
                  </property>
                  <property name="text">
-                  <string>Percent Occlusion</string>
+                  <string>Percent Open</string>
                  </property>
                 </widget>
                </item>
@@ -337,6 +350,16 @@ background-color: rgb(255, 175, 175);</string>
                  <property name="text">
                   <string>Move Valve to User-Defined Value</string>
                  </property>
+                 <property name="icon">
+                  <iconset theme="media-playback-start">
+                   <normaloff>.</normaloff>.</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>40</width>
+                   <height>40</height>
+                  </size>
+                 </property>
                 </widget>
                </item>
                <item row="5" column="1">
@@ -356,6 +379,10 @@ background-color: rgb(255, 175, 175);</string>
                  <property name="text">
                   <string>Move Valve to Fully-Closed Position</string>
                  </property>
+                 <property name="icon">
+                  <iconset theme="go-down">
+                   <normaloff>.</normaloff>.</iconset>
+                 </property>
                 </widget>
                </item>
                <item row="3" column="1">
@@ -374,6 +401,10 @@ background-color: rgb(255, 175, 175);</string>
                  </property>
                  <property name="text">
                   <string>Move Valve to Fully-Open Position</string>
+                 </property>
+                 <property name="icon">
+                  <iconset theme="go-top">
+                   <normaloff>.</normaloff>.</iconset>
                  </property>
                 </widget>
                </item>
@@ -928,7 +959,7 @@ border-color: rgb(255, 39, 10);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>940</width>
+     <width>942</width>
      <height>19</height>
     </rect>
    </property>

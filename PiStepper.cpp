@@ -154,9 +154,9 @@ void PiStepper::calibrate() {
     gpiod_line_set_value(dir_signal, 0);
     while (gpiod_line_get_value(limit_switch_bottom) == 1) {
         gpiod_line_set_value(step_signal, 1);
-        usleep(2000); // Short delay for pulse high
+        usleep(4000); // Short delay for pulse high
         gpiod_line_set_value(step_signal, 0);
-        usleep(2000); // Short delay for pulse low
+        usleep(4000); // Short delay for pulse low
     }
 
     // Move to top limit switch

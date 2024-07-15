@@ -10,21 +10,39 @@ MainWindow::MainWindow(QWidget *parent)
     , scene(new QGraphicsScene(this))
 {
     ui->setupUi(this);
+    
+    // === Overall UI elements setup ===
     ui->stackedWidget->setCurrentIndex(0);
 
-    // Setup start page graphics
+    connect(ui->actionExit_Valve_Program, &QAction::triggered, this, &MainWindow::on_actionExit_Valve_Program_triggered);
+    connect(timer, &QTimer::timeout, this, &MainWindow::on_timer_updateProgressBar);
+    connect(ui->estop_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_emergencyStop_clicked()));
+    
+    // === Setup start page graphics ===
     setupStartPageGraphics();
 
+    connect(ui->startPage_buttonBox, &QDialogButtonBox::accepted, this, &MainWindow::on_startPageOk_clicked);
+    connect(ui->startPage_buttonBox, &QDialogButtonBox::rejected, this, &MainWindow::on_actionExit_Valve_Program_triggered);
+
+    // === Settings page UI elements setup ===
     ui->speed_lineEdit->setText(QString::number(stepper->getSpeed()));
     ui->microstep_lineEdit->setText(QString::number(stepper->getMicrostepping()));
+
+    connect(ui->cal_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_cal_clicked()));
+    connect(ui->settings_buttonBox, &QDialogButtonBox::accepted, this, &MainWindow::on_settingsOk_clicked);
+
+    // === Absolute move UI elements setup ===
     ui->occlusionPctSet_lineEdit->setText(QString::number(stepper->getPercentOpen()));
 
+    connect(ui->fullOpen_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_fullOpen_clicked()));
+    connect(ui->fullClose_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_fullClose_clicked()));
+    connect(ui->pctMove_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_absMove_clicked()));
+
+    // === Relative move UI elements setup ===
     ui->rel_openClose_comboBox->addItem("Open Valve");
     ui->rel_openClose_comboBox->addItem("Close Valve");
-
     ui->qu1_comboBox->addItem("Open Valve");
     ui->qu1_comboBox->addItem("Close Valve");
-
     ui->qu2_comboBox->addItem("Open Valve");
     ui->qu2_comboBox->addItem("Close Valve");
     ui->qu3_comboBox->addItem("Open Valve");
@@ -32,30 +50,32 @@ MainWindow::MainWindow(QWidget *parent)
     ui->qu4_comboBox->addItem("Open Valve");
     ui->qu4_comboBox->addItem("Close Valve");
 
+    // Set default values for quick move fields
+    ui->qu1_lineEdit->setText("200");
+    ui->qu2_lineEdit->setText("50");
+    ui->qu3_lineEdit->setText("50");
+    ui->qu4_lineEdit->setText("200");
+
+    ui->qu1_comboBox->setCurrentIndex(0); // Open Valve
+    ui->qu2_comboBox->setCurrentIndex(0); // Open Valve
+    ui->qu3_comboBox->setCurrentIndex(1); // Close Valve
+    ui->qu4_comboBox->setCurrentIndex(1); // Close Valve
+
+    connect(ui->relative_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_relMove_clicked()));
+    connect(ui->qu1_commandLinkButton, &QCommandLinkButton::clicked, this, &MainWindow::on_quickMove1_clicked);
+    connect(ui->qu2_commandLinkButton, &QCommandLinkButton::clicked, this, &MainWindow::on_quickMove2_clicked);
+    connect(ui->qu3_commandLinkButton, &QCommandLinkButton::clicked, this, &MainWindow::on_quickMove3_clicked);
+    connect(ui->qu4_commandLinkButton, &QCommandLinkButton::clicked, this, &MainWindow::on_quickMove4_clicked);
+
+
     // Set up log list view
     logListView = ui->log_listView;
     logListView->setModel(logModel);
     logMessages.clear();
 
-    connect(ui->actionExit_Valve_Program, &QAction::triggered, this, &MainWindow::on_actionExit_Valve_Program_triggered);
-    connect(ui->cal_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_cal_clicked()));
-    connect(ui->fullOpen_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_fullOpen_clicked()));
-    connect(ui->fullClose_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_fullClose_clicked()));
-    connect(ui->pctMove_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_absMove_clicked()));
-    connect(ui->relative_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_relMove_clicked()));
 
-    connect(timer, &QTimer::timeout, this, &MainWindow::on_timer_updateProgressBar);
-
-    connect(ui->settings_buttonBox, &QDialogButtonBox::accepted, this, &MainWindow::on_settingsOk_clicked);
-
-    connect(ui->estop_commandLinkButton, SIGNAL(clicked()), this, SLOT(on_emergencyStop_clicked()));
-
-    connect(ui->startPage_buttonBox, &QDialogButtonBox::accepted, this, &MainWindow::on_startPageOk_clicked);
-    connect(ui->startPage_buttonBox, &QDialogButtonBox::rejected, this, &MainWindow::on_actionExit_Valve_Program_triggered);
-
-    setUIEnabled(false); // Disable UI elements
-
-    timer->start(1000);
+    setUIEnabled(false);    // Disable UI elements before calibration
+    timer->start(1000);     // Start timer to update UI elements
 }
 
 MainWindow::~MainWindow()
@@ -180,7 +200,7 @@ void MainWindow::on_settingsOk_clicked() {
         return;
     }
 
-    if (userSpeed < 1 || userSpeed > MAX_SPEED) {
+    if ((userSpeed < 1) || (userSpeed > MAX_SPEED)) {
         QMessageBox::warning(this, "Out of Range", "Please enter a whole number between 1 and 20");
         addLogMessage("Speed input out of range.");
         return;
@@ -223,5 +243,81 @@ void MainWindow::on_startPageOk_clicked() {
     setUIEnabled(false); // Disable UI elements
     stepper->calibrate();
     setUIEnabled(true); // Enable UI elements after calibration
-    ui->stackedWidget->setCurrentIndex(1); // Switch to another page after calibration
+    ui->stackedWidget->setCurrentIndex(3); // Switch to another page after calibration
+}
+
+void MainWindow::on_quickMove1_clicked() {
+    QString direction = ui->qu1_comboBox->currentText();
+    int dir = (direction == "Open Valve") ? 1 : 0;
+
+    bool ok;
+    int value = ui->qu1_lineEdit->text().toInt(&ok);
+
+    if (!ok) {
+        QMessageBox::warning(this, "Invalid Input", "Please enter a valid number");
+        addLogMessage("Invalid input for quick move 1.");
+        return;
+    }
+
+    stepper->moveStepsAsync(value, dir, []() {
+        std::cout << "Quick Move 1 operation completed." << std::endl;
+    });
+    addLogMessage(QString("Quick move 1: %1 steps %2.").arg(value).arg(dir == 1 ? "open" : "closed"));
+}
+
+void MainWindow::on_quickMove2_clicked() {
+    QString direction = ui->qu2_comboBox->currentText();
+    int dir = (direction == "Open Valve") ? 1 : 0;
+
+    bool ok;
+    int value = ui->qu2_lineEdit->text().toInt(&ok);
+
+    if (!ok) {
+        QMessageBox::warning(this, "Invalid Input", "Please enter a valid number");
+        addLogMessage("Invalid input for quick move 2.");
+        return;
+    }
+
+    stepper->moveStepsAsync(value, dir, []() {
+        std::cout << "Quick Move 2 operation completed." << std::endl;
+    });
+    addLogMessage(QString("Quick move 2: %1 steps %2.").arg(value).arg(dir == 1 ? "open" : "closed"));
+}
+
+void MainWindow::on_quickMove3_clicked() {
+    QString direction = ui->qu3_comboBox->currentText();
+    int dir = (direction == "Open Valve") ? 1 : 0;
+
+    bool ok;
+    int value = ui->qu3_lineEdit->text().toInt(&ok);
+
+    if (!ok) {
+        QMessageBox::warning(this, "Invalid Input", "Please enter a valid number");
+        addLogMessage("Invalid input for quick move 3.");
+        return;
+    }
+
+    stepper->moveStepsAsync(value, dir, []() {
+        std::cout << "Quick Move 3 operation completed." << std::endl;
+    });
+    addLogMessage(QString("Quick move 3: %1 steps %2.").arg(value).arg(dir == 1 ? "open" : "closed"));
+}
+
+void MainWindow::on_quickMove4_clicked() {
+    QString direction = ui->qu4_comboBox->currentText();
+    int dir = (direction == "Open Valve") ? 1 : 0;
+
+    bool ok;
+    int value = ui->qu4_lineEdit->text().toInt(&ok);
+
+    if (!ok) {
+        QMessageBox::warning(this, "Invalid Input", "Please enter a valid number");
+        addLogMessage("Invalid input for quick move 4.");
+        return;
+    }
+
+    stepper->moveStepsAsync(value, dir, []() {
+        std::cout << "Quick Move 4 operation completed." << std::endl;
+    });
+    addLogMessage(QString("Quick move 4: %1 steps %2.").arg(value).arg(dir == 1 ? "open" : "closed"));
 }

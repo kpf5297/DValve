@@ -23,34 +23,43 @@ public:
     ~MainWindow();
 
 private slots:
+
+    // Overall UI slots
+    void on_timer_updateProgressBar();
+    void on_emergencyStop_clicked();
+    void on_startPageOk_clicked();
+
+    // Page selection slots
     void on_settings_toolButton_clicked();
     void on_relative_toolButton_clicked();
     void on_absolute_toolButton_clicked();
 
+    // Menu bar slots
     void on_actionExit_Valve_Program_triggered();
 
+    // Settings page slots
     void on_cal_clicked();
+    void on_settingsOk_clicked();
+    void on_settingsCancel_clicked();
 
+    // Relative movement page slots
+    void on_relMove_clicked();
+    void on_quickMove1_clicked();
+    void on_quickMove2_clicked();
+    void on_quickMove3_clicked();
+    void on_quickMove4_clicked();
+
+    // Absolute movement page slots
     void on_absMove_clicked();
     void on_fullOpen_clicked();
     void on_fullClose_clicked();
 
-    void on_relMove_clicked();
-
-    void on_timer_updateProgressBar();
-
-    void on_settingsOk_clicked();
-    void on_settingsCancel_clicked();
-
-    void on_emergencyStop_clicked();
-
-    void on_startPageOk_clicked();
-
 private:
     Ui::MainWindow *ui;
-    PiStepper *stepper;
-    QTimer *timer; // Timer to update display outputs
+    PiStepper *stepper; // Stepper motor object
+    QTimer *timer;      // Timer to update UI elements
 
+    // Log messages objects
     QListView *logListView;
     QStringListModel *logModel;
     QStringList logMessages;
